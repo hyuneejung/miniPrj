@@ -6,23 +6,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import cafe.CafeDto;
+import member.EcoDto;
 import util.InputUtil;
 import util.MiniConn;
 
 public class SavePointDao {
 	
-	public int dbAllTableAddCP(CafeDto dto) { //일회용 컵 반환 적립 시 회원테이블에 포인트 added포인트 업데이트
+	public int dbAllTableAddCP(CafeDto dto, EcoDto ed) { //일회용 컵 반환 적립 시 회원테이블에 포인트 added포인트 업데이트
 		Connection conn = null;
 		PreparedStatement pstmt = null;
-		String sql = "UPDATE ECO_MEMBER \r\n"
-				+ "SET \r\n"
-				+ "POINT = POINT + (SELECT CUPPOINT FROM CAFE WHERE NAME = ?)\r\n"
-				+ ", ADDEDPOINT = ADDEDPOINT + (SELECT CUPPOINT FROM CAFE WHERE NAME = ?)\r\n"
-				+ "WHERE ID = 'TAEWON'"; //아이디 부분 로그인 부분에서 받아올수 있게하기 
-		String sql2 = "INSERT INTO HISTORY(NO, ID, POINT, REPORT) \r\n"
-				+ "VALUES (SEQ_HISTORY_NO.NEXTVAL, \r\n"
-				+ "'TAEWON'" //아이디 부분 로그인 부분에서 받아올 수 있게하기
-				+ ", (SELECT CUPPOINT FROM CAFE WHERE NAME = ? ), '텀블러 사용' )";
+		String sql = "UPDATE ECO_MEMBER SET"
+				+ " POINT = POINT + (SELECT CUPPOINT FROM CAFE WHERE NAME = ?) + (SELECT BONUS FROM RANKSYS WHERE RANK = ?)"
+				+ ", ADDEDPOINT = ADDEDPOINT + (SELECT CUPPOINT FROM CAFE WHERE NAME = ?) + (SELECT BONUS FROM RANKSYS WHERE RANK = ?)"
+				+ "WHERE ID = ?"; 
+		String sql2 = "INSERT INTO HISTORY(NO, ID, POINT, REPORT_NO, PLACE_NO)"
+				+ " VALUES (SEQ_HISTORY_NO.NEXTVAL, ?" 
+				+ ", (SELECT CUPPOINT FROM CAFE WHERE NAME = ? ) + (SELECT BONUS FROM RANKSYS WHERE RANK = ?), 1"
+				+ ", (SELECT PLACE_NO FROM PLACE WHERE PLACE_NAME = ?))";
 		int result = 0;
 		int result2 = 0;
 		try {
@@ -30,23 +30,26 @@ public class SavePointDao {
 			pstmt = conn.prepareStatement(sql);
 			
 			pstmt.setString(1, dto.getName());
-			pstmt.setString(2, dto.getName());
-			
+			pstmt.setString(2, ed.getRank());
+			pstmt.setString(3, dto.getName());
+			pstmt.setString(4, ed.getRank());
+			pstmt.setString(5, ed.getId());
+			System.out.println("??");
 			result = pstmt.executeUpdate();
-			
 			pstmt = conn.prepareStatement(sql2);
-			pstmt.setString(1, dto.getName());
-			
+			pstmt.setString(1, ed.getId());
+			pstmt.setString(2, dto.getName());
+			pstmt.setString(3, ed.getRank());
+			pstmt.setString(4, dto.getName());
+			System.out.println("???");
 			result2 = pstmt.executeUpdate();
-			
 			if(result > 0 && result2 > 0) {
 				MiniConn.commit(conn);
-				return result+result2;
 			} else {
 				MiniConn.rollback(conn);
 			}
 		} catch (SQLException e) {
-			System.out.println("[ERROR] 일회용 컵 반환 ECO적립 실패");
+			MiniConn.rollback(conn);
 			e.printStackTrace();
 		} finally {
 			MiniConn.close(pstmt, conn);
@@ -55,18 +58,17 @@ public class SavePointDao {
 	}
 	
 	
-	public int dbAllTableAddTP(CafeDto dto) { //텀블러포인트 적립 시 회원테이블에 포인트 added포인트 업데이트
+	public int dbAllTableAddTP(CafeDto dto,EcoDto ed) { //텀블러포인트 적립 시 회원테이블에 포인트 added포인트 업데이트
 		Connection conn = null;
 		PreparedStatement pstmt = null;
-		String sql = "UPDATE ECO_MEMBER \r\n"
-				+ "SET \r\n"
-				+ "POINT = POINT + (SELECT TUMPOINT FROM CAFE WHERE NAME = ?)\r\n"
-				+ ", ADDEDPOINT = ADDEDPOINT + (SELECT TUMPOINT FROM CAFE WHERE NAME = ?)\r\n"
-				+ "WHERE ID = 'TAEWON'"; //아이디 부분 로그인 부분에서 받아올수 있게하기 
-		String sql2 = "INSERT INTO HISTORY(NO, ID, POINT, REPORT) \r\n"
-				+ "VALUES (SEQ_HISTORY_NO.NEXTVAL, \r\n"
-				+ "'TAEWON'" //아이디 부분 로그인 부분에서 받아올 수 있게하기
-				+ ", (SELECT TUMPOINT FROM CAFE WHERE NAME = ? ), '텀블러 사용' )";
+		String sql = "UPDATE ECO_MEMBER SET"
+				+ " POINT = POINT + (SELECT TUMPOINT FROM CAFE WHERE NAME = ?) + (SELECT BONUS FROM RANKSYS WHERE RANK = ?)"
+				+ ", ADDEDPOINT = ADDEDPOINT + (SELECT TUMPOINT FROM CAFE WHERE NAME = ?) + (SELECT BONUS FROM RANKSYS WHERE RANK = ?)"
+				+ "WHERE ID = ?"; 
+		String sql2 = "INSERT INTO HISTORY(NO, ID, POINT, REPORT_NO, PLACE_NO)"
+				+ " VALUES (SEQ_HISTORY_NO.NEXTVAL, ?" 
+				+ ", (SELECT TUMPOINT FROM CAFE WHERE NAME = ? ) + (SELECT BONUS FROM RANKSYS WHERE RANK = ?), 1"
+				+ ", (SELECT PLACE_NO FROM PLACE WHERE PLACE_NAME = ?))";
 		int result = 0;
 		int result2 = 0;
 		try {
@@ -74,22 +76,24 @@ public class SavePointDao {
 			pstmt = conn.prepareStatement(sql);
 			
 			pstmt.setString(1, dto.getName());
-			pstmt.setString(2, dto.getName());
-			
+			pstmt.setString(2, ed.getRank());
+			pstmt.setString(3, dto.getName());
+			pstmt.setString(4, ed.getRank());
+			pstmt.setString(5, ed.getId());
 			result = pstmt.executeUpdate();
-			
-			pstmt.setString(1, dto.getName());
+			pstmt = conn.prepareStatement(sql2);
+			pstmt.setString(1, ed.getId());
+			pstmt.setString(2, dto.getName());
+			pstmt.setString(3, ed.getRank());
+			pstmt.setString(4, dto.getName());
 			result2 = pstmt.executeUpdate();
-			
 			if(result > 0 && result2 > 0) {
-				System.out.println(result+result2);
 				MiniConn.commit(conn);
-				return result+result2;
 			} else {
 				MiniConn.rollback(conn);
 			}
 		} catch (SQLException e) {
-			System.out.println("[ERROR] 텁블러 사용 ECO적립 실패");
+			MiniConn.rollback(conn);
 			e.printStackTrace();
 		} finally {
 			MiniConn.close(pstmt, conn);
@@ -119,7 +123,6 @@ public class SavePointDao {
 				return dto;
 			}
 		} catch (SQLException e) {
-			System.out.println("제휴 까페가 아닙니다.");
 			e.printStackTrace();
 		} finally {
 			MiniConn.close(pstmt, result, conn);
