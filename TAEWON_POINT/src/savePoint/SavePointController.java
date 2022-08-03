@@ -1,35 +1,39 @@
 package savePoint;
 
 import cafe.CafeDto;
+import main.Main;
+import member.EcoDto;
 import util.InputUtil;
 
 public class SavePointController {
 	
 	public void point() {// ~~~~적립하기~~~~~
+		if(Main.LoginUser == null) {
+			return;
+		}
+		
 		boolean isFinish = false;
 		while (!isFinish) {
 			System.out.println("적립하시겠습니까?(Y/N)");
 			String user = InputUtil.toUpperCase(InputUtil.getString());
-			if (user.equals("Y")) {
+			if(user.equals("Y")) {
 				System.out.println("1. 일회용 컵 반환하기 2. 텀블러 사용하기");
 				int userChoice = InputUtil.getInt();
-				if (userChoice == 1 || userChoice == 2) {
-					cafeEmp(userChoice);
+				if(userChoice == 1 || userChoice == 2) {
+					cafeEmp(userChoice,Main.LoginUser);
 					return;
-				} else {
-					System.out.println("잘못입력하셨습니다.");
+				}else {
+					System.out.println("잘못 입력 하셨습니다.");
 					isFinish = request();
 				}
-			} else if (user.equals("N")) {
-				return;
-			} else {
-				System.out.println("잘못 입력하셨습니다");
+			}else {
+				System.out.println("잘못 입력 하셨습니다.");
 				isFinish = request();
 			}
 		}
 	}// point
 
-	private void cafeEmp(int userChoice) { // ~~~카페직원 확인~~~
+	private void cafeEmp(int userChoice, EcoDto ed) { // ~~~카페직원 확인~~~
 		boolean isFinish = false;
 		while (!isFinish) {
 
@@ -45,15 +49,15 @@ public class SavePointController {
 				if (num == true) { // 인증번호가 맞다면 실행~
 
 					if (userChoice == 1) {// 1. 일회용 컵 반환하기
-						int cupPoint = new SavePointDao().dbAllTableAddCP(dto);
+						int cupPoint = new SavePointDao().dbAllTableAddCP(dto,ed);
 						if (cupPoint == 2) {
-							System.out.println(dto.getName() + "에서 " + dto.getTumPoint() + "ECO 적립되었습니다.");
+							System.out.println(dto.getName() + "에서 " + dto.getCupPoint() + "ECO 적립되었습니다.");
 							return; // ======================적립성공하면 종료====================================
 						} else {
 							System.out.println("일회용 컵 반납 ECO 적립 실패");
 						}
 					} else if (userChoice == 2) {// 2. 텀블러 사용하기
-						int tumPoint = new SavePointDao().dbAllTableAddTP(dto);
+						int tumPoint = new SavePointDao().dbAllTableAddTP(dto,ed);
 						if (tumPoint == 2) {
 							System.out.println(dto.getName() + "에서 " + dto.getTumPoint() + "ECO 적립되었습니다.");
 							return; // ======================적립성공하면 종료====================================
